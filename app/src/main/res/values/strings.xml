@@ -1,8 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Greencode Challenge</string>
-    <string name="amount_hint">Amount</string>
-    <string name="convert_button">Convert</string>
-    <string name="result_label">Result</string>
-    <string name="from_currency">From Currency</string>
-    <string name="to_currency">To Currency</string>
+    <string name="app_name">GreencodeChallenge</string>
+    
+    <!-- Fragment títulos -->
+    <string name="conversion_fragment_title">Convertidor de monedas</string>
+    
+    <!-- Etiquetas de conversión -->
+    <string name="amount_hint">Ingrese monto</string>
+    <string name="from_currency">Moneda de origen</string>
+    <string name="to_currency">Moneda de destino</string>
+    <string name="convert_button">Convertir</string>
+    <string name="result_label">El resultado aparecerá aquí</string>
+    <string name="ratio_label">Tasa de cambio</string>
+    <string name="last_updated_format">Tasas actualizadas: %1$s</string>
+    
+    <!-- Mensajes de error -->
+    <string name="error_unknown">Error desconocido</string>
+    <string name="error_fetching_rates">Error al obtener tasas de cambio</string>
+    <string name="error_empty_rates">Tasas de cambio vacías recibidas</string>
+    <string name="error_conversion">Error en la conversión</string>
+    <string name="error_empty_amount">Por favor ingrese un monto</string>
+    <string name="error_invalid_amount">Monto inválido</string>
+    
+    <!-- Mensajes de información -->
+    <string name="loading_exchange_rate">Obteniendo tasa de cambio…</string>
+    <string name="exchange_rate_not_available">Tasa de cambio no disponible</string>
+    <string name="exchange_rate_format">1 %1$s = %2$s %3$s</string>
 </resources>

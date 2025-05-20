@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -9,6 +11,9 @@ android {
     namespace = "com.example.greencodechallenge"
     compileSdk = 34
 
+    val properties = Properties()
+    properties.load(project.rootProject.file("local.properties").inputStream())
+
     defaultConfig {
         applicationId = "com.example.greencodechallenge"
         minSdk = 24
@@ -16,6 +21,8 @@ android {
         versionCode = 1
         versionName = "1.0"
 
+        resValue("string", "BASE_URL", properties.getProperty("BASE_URL", ""))
+        resValue("string", "API_KEY", properties.getProperty("API_KEY", ""))
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -51,6 +58,9 @@ dependencies {
     implementation(libs.retrofit)
     // Gson
     implementation(libs.converter.gson)
+    // OkHttp
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging.interceptor)
     // Hilt
     implementation(libs.hilt.android)
     kapt(libs.hilt.android.compiler)

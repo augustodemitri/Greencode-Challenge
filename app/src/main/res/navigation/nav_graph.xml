@@ -6,7 +6,7 @@
 
     <fragment
         android:id="@+id/conversionFragment"
-        android:name="com.example.greencodechallenge.ui.conversion.ConversionFragment"
+        android:name="com.example.greencodechallenge.presentation.conversion.ConversionFragment"
         android:label="Currency Converter" />
 
 </navigation> 
