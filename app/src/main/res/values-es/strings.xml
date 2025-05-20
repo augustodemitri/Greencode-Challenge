@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Greencode Challenge</string>
+    <string name="amount_hint">Monto</string>
+    <string name="convert_button">Convertir</string>
+    <string name="result_label">Resultado</string>
+    <string name="from_currency">Moneda de origen</string>
+    <string name="to_currency">Moneda de destino</string>
+</resources> 
