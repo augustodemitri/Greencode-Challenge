@@ -12,14 +12,14 @@ BASE_URL=https://api.exchangerate.host/
 ```
 3. Sincroniza y ejecuta
 
-## 🛠 Dependencias principales
+## Dependencias principales
 
 - Kotlin + Coroutines
 - Hilt (DI)
 - Retrofit + Room
 - Material Design
 
-## 💡 Decisiones técnicas
+## Decisiones técnicas
 
 - MVVM + Clean Architecture para separar responsabilidades y facilitar testing
 - Coroutines + Flow para manejar operaciones asíncronas y actualizaciones en tiempo real
@@ -27,7 +27,7 @@ BASE_URL=https://api.exchangerate.host/
 - ViewBinding para una interacción más segura con las vistas
 - StateFlow para manejar estados de UI y actualizaciones de conversiones
 
-## 🔜 Mejoras futuras
+## Mejoras futuras
 
 ### UX/UI
 - Mejorar la UI con iconos de los paises a los que pertenece la moneda elegida
