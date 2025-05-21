@@ -81,6 +81,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/result_label"
+        android:textSize="18sp"
+        android:textStyle="bold"
         app:layout_constraintTop_toBottomOf="@id/btnConvert"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -98,17 +100,34 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginTop="8dp"/>
 
-    <TextView
-        android:id="@+id/tvLastUpdated"
+    <LinearLayout
+        android:id="@+id/llLastUpdatedContainer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textSize="12sp"
-        android:textStyle="italic"
+        android:orientation="horizontal"
         app:layout_constraintTop_toBottomOf="@id/tvRatio"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="4dp"
-        tools:text="Tasas actualizadas: 01/01/2023 12:00"/>
+        android:layout_marginTop="4dp">
+
+        <TextView
+            android:id="@+id/tvLastUpdated"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textStyle="italic"
+            tools:text="Last updated: 01/01/2023 12:00"/>
+
+        <ImageView
+            android:id="@+id/ivInfo"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginStart="6dp"
+            android:contentDescription="@string/info_icon_desc"
+            android:src="@drawable/ic_info"
+            android:focusable="true"
+            android:clickable="true"/>
+    </LinearLayout>
 
     <ProgressBar
         android:id="@+id/progressBar"

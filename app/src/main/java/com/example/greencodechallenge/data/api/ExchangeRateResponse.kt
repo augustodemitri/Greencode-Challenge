@@ -7,24 +7,36 @@ data class ExchangeRateResponse(
     @SerializedName("success")
     val success: Boolean,
     @SerializedName("terms")
-    val terms: String,
+    val terms: String?,
     @SerializedName("privacy")
-    val privacy: String,
+    val privacy: String?,
     @SerializedName("timestamp")
     val timestamp: Long,
     @SerializedName("source")
     val source: String,
     @SerializedName("quotes")
-    val quotes: Map<String, Double>
+    val quotes: Map<String, Double>?,
+    @SerializedName("error")
+    val error: ApiError?
 ) {
-    fun toExchangeRate(): ExchangeRate {
+    data class ApiError(
+        @SerializedName("code")
+        val code: Int,
+        @SerializedName("info")
+        val info: String
+    )
+
+    fun toExchangeRate(): ExchangeRate? {
+        if (!success || quotes == null) return null
+        
         return ExchangeRate(
             baseCurrency = source,
             rates = quotes.mapKeys { entry -> 
                 // La API devuelve pares como "USDEUR", necesitamos extraer "EUR"
                 entry.key.substring(source.length)
             },
-            timestamp = timestamp
+            timestamp = timestamp,
+            cacheTimestamp = System.currentTimeMillis() / 1000 // Convertir a segundos
         )
     }
 } 

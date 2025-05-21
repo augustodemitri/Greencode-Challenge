@@ -1,29 +1,60 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">GreencodeChallenge</string>
-    
-    <!-- Fragment títulos -->
-    <string name="conversion_fragment_title">Convertidor de monedas</string>
-    
-    <!-- Etiquetas de conversión -->
-    <string name="amount_hint">Ingrese monto</string>
-    <string name="from_currency">Moneda de origen</string>
-    <string name="to_currency">Moneda de destino</string>
-    <string name="convert_button">Convertir</string>
-    <string name="result_label">El resultado aparecerá aquí</string>
-    <string name="ratio_label">Tasa de cambio</string>
-    <string name="last_updated_format">Tasas actualizadas: %1$s</string>
-    
-    <!-- Mensajes de error -->
-    <string name="error_unknown">Error desconocido</string>
-    <string name="error_fetching_rates">Error al obtener tasas de cambio</string>
-    <string name="error_empty_rates">Tasas de cambio vacías recibidas</string>
-    <string name="error_conversion">Error en la conversión</string>
-    <string name="error_empty_amount">Por favor ingrese un monto</string>
-    <string name="error_invalid_amount">Monto inválido</string>
-    
-    <!-- Mensajes de información -->
-    <string name="loading_exchange_rate">Obteniendo tasa de cambio…</string>
-    <string name="exchange_rate_not_available">Tasa de cambio no disponible</string>
+
+    <!-- Fragment titles -->
+    <string name="conversion_fragment_title">Currency Converter</string>
+    <string name="history_fragment_title">Conversion History</string>
+    <string name="empty_history">No conversions in history</string>
+    <string name="clear_history">Clear</string>
+    <string name="show_all_conversions">Show all</string>
+    <string name="filter_today">Today</string>
+    <string name="filter_week">Last week</string>
+    <string name="filter_all">All</string>
+
+    <!-- Conversion labels -->
+    <string name="amount_hint">Enter amount</string>
+    <string name="from_currency">From currency</string>
+    <string name="to_currency">To currency</string>
+    <string name="convert_button">Convert</string>
+    <string name="result_label">The result will appear here</string>
+    <string name="ratio_label">Exchange rate</string>
+    <string name="last_updated_format">Last updated: %s</string>
+    <string name="cache_expires_in">Expira en %s minutos</string>
+    <string name="cache_expired">Cache expirado</string>
+
+    <!-- Error messages -->
+    <string name="error_unknown">Unknown error</string>
+    <string name="error_fetching_rates">Error fetching exchange rates</string>
+    <string name="error_empty_rates">Received empty exchange rates</string>
+    <string name="error_conversion">Conversion error</string>
+    <string name="error_empty_amount">Please enter an amount</string>
+    <string name="error_invalid_amount">Invalid amount</string>
+    <string name="error_no_rates">No exchange rates available. Please try again later.</string>
+
+    <!-- Info messages -->
+    <string name="loading_exchange_rate">Fetching exchange rate…</string>
+    <string name="exchange_rate_not_available">Exchange rate not available</string>
     <string name="exchange_rate_format">1 %1$s = %2$s %3$s</string>
+
+    <!-- Conversion history -->
+    <string name="original_amount_format">%1$s %2$s</string>
+    <string name="converted_amount_format">%1$s %2$s</string>
+    <string name="conversion_rate_format">1 %1$s = %2$s %3$s</string>
+    <plurals name="conversions_count_total">
+        <item quantity="one">%1$d conversion in total</item>
+        <item quantity="other">%1$d conversions in total</item>
+    </plurals>
+    <plurals name="conversions_count_today">
+        <item quantity="one">%1$d conversion %2$s</item>
+        <item quantity="other">%1$d conversions %2$s</item>
+    </plurals>
+    <plurals name="conversions_count_last_week">
+        <item quantity="one">%1$d conversion in the %2$s</item>
+        <item quantity="other">%1$d conversions in the %2$s</item>
+    </plurals>
+
+    <!-- Info icon -->
+    <string name="info_icon_desc">Info about update frequency</string>
+    <string name="exchange_rate_info">Exchange rates are updated every hour.</string>
+    <string name="exchange_rate_info_es">Las tasas de cambio se actualizan cada 1 hora.</string>
 </resources>

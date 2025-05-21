@@ -23,7 +23,7 @@ import javax.inject.Singleton
 object NetworkModule {
 
     private const val CACHE_SIZE = 10 * 1024 * 1024 // 10 MB
-    private const val CACHE_TIMEOUT = 60 * 60 // 1 hora en segundos
+    private const val CACHE_TIMEOUT = 5 * 60 // 5 minutos en segundos
 
     @Provides
     @Singleton
@@ -62,12 +62,24 @@ object NetworkModule {
 
                 chain.proceed(newRequest)
             }
-            .addInterceptor { chain ->
+            .addNetworkInterceptor { chain ->
                 val request = chain.request()
-                val newRequest = request.newBuilder()
-                    .header("Cache-Control", "public, max-age=$CACHE_TIMEOUT")
-                    .build()
-                chain.proceed(newRequest)
+                val response = chain.proceed(request)
+                val fromCache = response.cacheResponse != null
+                val fromNetwork = response.networkResponse != null
+                val cacheTimestamp = response.header("X-Cache-Timestamp")
+                android.util.Log.d("CACHE", "From cache: $fromCache, From network: $fromNetwork, X-Cache-Timestamp: $cacheTimestamp")
+                // Solo cachear respuestas exitosas
+                if (response.isSuccessful) {
+                    response.newBuilder()
+                        .header("Cache-Control", "public, max-age=$CACHE_TIMEOUT")
+                        .removeHeader("Pragma")
+                        .removeHeader("Expires")
+                        .header("X-Cache-Timestamp", System.currentTimeMillis().toString())
+                        .build()
+                } else {
+                    response
+                }
             }
             .addInterceptor(loggingInterceptor)
             .connectTimeout(15, TimeUnit.SECONDS)

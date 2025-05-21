@@ -1,5 +1,6 @@
 package com.example.greencodechallenge.presentation.conversion
 
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -9,8 +10,13 @@ import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import dagger.hilt.android.AndroidEntryPoint
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.example.greencodechallenge.R
 import com.example.greencodechallenge.databinding.FragmentConversionBinding
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class ConversionFragment : Fragment() {
@@ -38,66 +44,85 @@ class ConversionFragment : Fragment() {
         setupObservers()
         setupListeners()
 
-        binding.progressBar.visibility = View.VISIBLE
+        val locale = resources.configuration.locales[0]
+        val tooltip = if (locale.language == "es") {
+            getString(R.string.exchange_rate_info_es)
+        } else {
+            getString(R.string.exchange_rate_info)
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            binding.ivInfo.tooltipText = tooltip
+        }
+
         viewModel.fetchExchangeRates()
     }
 
     private fun setupObservers() {
-        viewModel.availableCurrencies.observe(viewLifecycleOwner) { currencies ->
-            if (currencies.isNotEmpty()) {
-                // Inicializar las monedas con las primeras disponibles
-                if (fromCurrency.isEmpty()) {
-                    fromCurrency = currencies.first()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    when (state) {
+                        is ConversionUiState.Success -> {
+                            binding.progressBar.visibility = View.GONE
+                            binding.btnConvert.isEnabled = true
+                            binding.spinnerFrom.isEnabled = true
+                            binding.spinnerTo.isEnabled = true
+                            
+                            if (fromCurrency.isEmpty()) {
+                                fromCurrency = state.fromCurrency
+                            }
+                            if (toCurrency.isEmpty()) {
+                                toCurrency = state.toCurrency
+                            }
+                            
+                            setupSpinners(state.currencies)
+                            
+                            if (state.ratio.isNotEmpty()) {
+                                binding.tvRatio.text = state.ratio
+                                binding.tvRatio.visibility = View.VISIBLE
+                            } else {
+                                binding.tvRatio.visibility = View.GONE
+                            }
+                            
+                            if (state.lastUpdated.isNotEmpty()) {
+                                binding.tvLastUpdated.text = state.lastUpdated
+                                binding.tvLastUpdated.visibility = View.VISIBLE
+                            } else {
+                                binding.tvLastUpdated.visibility = View.GONE
+                            }
+                            
+                            if (state.result.isNotEmpty()) {
+                                binding.tvResult.text = state.result
+                                binding.tvResult.visibility = View.VISIBLE
+                            } else {
+                                binding.tvResult.text = getString(R.string.result_label)
+                                binding.tvResult.visibility = View.VISIBLE
+                            }
+                        }
+                        is ConversionUiState.Error -> {
+                            binding.progressBar.visibility = View.GONE
+                            binding.btnConvert.isEnabled = true
+                            binding.spinnerFrom.isEnabled = true
+                            binding.spinnerTo.isEnabled = true
+                            
+                            Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
+                        }
+                        is ConversionUiState.Loading -> {
+                            binding.progressBar.visibility = View.VISIBLE
+                            binding.btnConvert.isEnabled = false
+                            binding.spinnerFrom.isEnabled = false
+                            binding.spinnerTo.isEnabled = false
+                        }
+                    }
                 }
-                if (toCurrency.isEmpty() && currencies.size > 1) {
-                    toCurrency = currencies[1]
-                } else if (toCurrency.isEmpty()) {
-                    toCurrency = currencies.first()
-                }
-                
-                setupSpinners(currencies)
             }
-        }
-
-        viewModel.conversionResult.observe(viewLifecycleOwner) { result ->
-            binding.tvResult.text = result
-        }
-        
-        viewModel.conversionRatio.observe(viewLifecycleOwner) { ratio ->
-            if (ratio.isNotEmpty()) {
-                binding.tvRatio.text = ratio
-                binding.tvRatio.visibility = View.VISIBLE
-            } else {
-                binding.tvRatio.visibility = View.GONE
-            }
-        }
-
-        viewModel.lastUpdated.observe(viewLifecycleOwner) { lastUpdated ->
-            if (lastUpdated.isNotEmpty()) {
-                binding.tvLastUpdated.text = lastUpdated
-                binding.tvLastUpdated.visibility = View.VISIBLE
-            } else {
-                binding.tvLastUpdated.visibility = View.GONE
-            }
-        }
-
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
-            binding.btnConvert.isEnabled = !isLoading
-
-            binding.spinnerFrom.isEnabled = !isLoading
-            binding.spinnerTo.isEnabled = !isLoading
-        }
-
-        viewModel.error.observe(viewLifecycleOwner) { errorMessage ->
-            Toast.makeText(requireContext(), errorMessage, Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun setupListeners() {
         binding.btnConvert.setOnClickListener {
             val amount = binding.etAmount.text.toString()
-            
             viewModel.convertCurrency(amount, fromCurrency, toCurrency)
         }
     }

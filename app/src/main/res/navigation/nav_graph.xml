@@ -7,6 +7,21 @@
     <fragment
         android:id="@+id/conversionFragment"
         android:name="com.example.greencodechallenge.presentation.conversion.ConversionFragment"
-        android:label="Currency Converter" />
+        android:label="Currency Converter">
+        
+        <action
+            android:id="@+id/action_conversionFragment_to_historyFragment"
+            app:destination="@id/historyFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/historyFragment"
+        android:name="com.example.greencodechallenge.presentation.history.HistoryFragment"
+        android:label="Conversion History">
+        
+        <action
+            android:id="@+id/action_historyFragment_to_conversionFragment"
+            app:destination="@id/conversionFragment" />
+    </fragment>
 
 </navigation> 
