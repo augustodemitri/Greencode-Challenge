@@ -51,4 +51,14 @@
         <item quantity="one">%1$d conversión en la %2$s</item>
         <item quantity="other">%1$d conversiones en la %2$s</item>
     </plurals>
+
+    <string name="exchange_rate_info">Las tasas de cambio se actualizan cada 5 minutos.</string>
+
+    <string name="info_icon_desc">Información sobre la frecuencia de actualización</string>
+    <string name="conversion_details_title">Detalles de la Conversión</string>
+    <string name="conversion_rate_label">Tasa de Cambio</string>
+    <string name="timestamp_label">Fecha y Hora</string>
+
+    <string name="cache_expires_in">Expira en %1$s minutos</string>
+    <string name="cache_expired">Caché expirado</string>
 </resources>

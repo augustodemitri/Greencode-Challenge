@@ -2,6 +2,7 @@ package com.example.greencodechallenge.presentation.history
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.navigation.findNavController
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -55,6 +56,11 @@ class ConversionHistoryAdapter : ListAdapter<ConversionHistory, ConversionHistor
                 )
                 
                 tvTimestamp.text = dateFormat.format(Date(item.timestamp))
+                
+                root.setOnClickListener {
+                    val action = HistoryFragmentDirections.actionHistoryFragmentToDetailFragment(item.id)
+                    it.findNavController().navigate(action)
+                }
             }
         }
     }

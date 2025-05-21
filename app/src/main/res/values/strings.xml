@@ -55,6 +55,10 @@
 
     <!-- Info icon -->
     <string name="info_icon_desc">Info about update frequency</string>
-    <string name="exchange_rate_info">Exchange rates are updated every hour.</string>
-    <string name="exchange_rate_info_es">Las tasas de cambio se actualizan cada 1 hora.</string>
+    <string name="exchange_rate_info">Exchange rates are updated every 5 minutes.</string>
+
+    <!-- Conversion details -->
+    <string name="conversion_details_title">Detalles de la Conversión</string>
+    <string name="conversion_rate_label">Tasa de Cambio</string>
+    <string name="timestamp_label">Fecha y Hora</string>
 </resources>

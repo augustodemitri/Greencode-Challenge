@@ -22,6 +22,19 @@
         <action
             android:id="@+id/action_historyFragment_to_conversionFragment"
             app:destination="@id/conversionFragment" />
+            
+        <action
+            android:id="@+id/action_historyFragment_to_detailFragment"
+            app:destination="@id/conversionDetailFragment" />
+    </fragment>
+    
+    <fragment
+        android:id="@+id/conversionDetailFragment"
+        android:name="com.example.greencodechallenge.presentation.detail.ConversionDetailFragment"
+        android:label="Conversion Details">
+        <argument
+            android:name="conversionId"
+            app:argType="long" />
     </fragment>
 
 </navigation> 

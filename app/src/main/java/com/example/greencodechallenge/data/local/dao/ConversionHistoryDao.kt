@@ -20,4 +20,7 @@ interface ConversionHistoryDao {
 
     @Query("DELETE FROM conversion_history")
     suspend fun deleteAllConversions()
+
+    @Query("SELECT * FROM conversion_history WHERE id = :id")
+    suspend fun getConversionById(id: Long): ConversionHistory?
 } 

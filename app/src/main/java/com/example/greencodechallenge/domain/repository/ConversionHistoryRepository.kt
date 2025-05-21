@@ -9,4 +9,5 @@ interface ConversionHistoryRepository {
     fun getAllConversionsFlow(): Flow<List<ConversionHistory>>
     fun getRecentConversionsFlow(limit: Int): Flow<List<ConversionHistory>>
     suspend fun clearAllConversions()
+    suspend fun getConversionById(id: Long): ConversionHistory?
 } 

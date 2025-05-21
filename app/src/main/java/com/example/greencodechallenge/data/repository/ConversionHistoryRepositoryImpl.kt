@@ -26,4 +26,8 @@ class ConversionHistoryRepositoryImpl @Inject constructor(
     override suspend fun clearAllConversions() {
         conversionHistoryDao.deleteAllConversions()
     }
+    
+    override suspend fun getConversionById(id: Long): ConversionHistory? {
+        return conversionHistoryDao.getConversionById(id)
+    }
 } 

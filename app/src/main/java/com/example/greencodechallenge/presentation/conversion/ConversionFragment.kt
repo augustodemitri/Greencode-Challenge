@@ -43,13 +43,7 @@ class ConversionFragment : Fragment() {
 
         setupObservers()
         setupListeners()
-
-        val locale = resources.configuration.locales[0]
-        val tooltip = if (locale.language == "es") {
-            getString(R.string.exchange_rate_info_es)
-        } else {
-            getString(R.string.exchange_rate_info)
-        }
+        val tooltip = getString(R.string.exchange_rate_info)
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             binding.ivInfo.tooltipText = tooltip
