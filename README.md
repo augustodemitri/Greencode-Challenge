@@ -2,7 +2,7 @@
 
 App Android para visualiar conversiones de monedas en tiempo real. Permite seleccionar monedas de origen y destino, con tasas de cambio actualizadas. Desarrollada con MVVM y Clean Architecture.
 
-## 🚀 Para ejecutar
+## Para ejecutar
 
 1. Clona el repo
 2. Crea `local.properties` con:
