@@ -29,11 +29,17 @@ class ConvertCurrencyUseCase @Inject constructor(
             if (exchangeRate.baseCurrency == fromCurrency) {
                 val rate = exchangeRate.rates[toCurrency]
                     ?: return Result.failure(Exception("Target currency not found"))
+                if (rate <= 0) {
+                    return Result.failure(Exception("Invalid exchange rate"))
+                }
                 Result.success(amount * rate)
             } else {
                 // Necesitamos hacer una conversión a través de la moneda base
                 val baseRate = exchangeRate.rates[fromCurrency]
                     ?: return Result.failure(Exception("Source currency not found"))
+                if (baseRate <= 0) {
+                    return Result.failure(Exception("Invalid exchange rate"))
+                }
                 
                 // Convertir a la moneda base primero
                 val amountInBaseCurrency = amount / baseRate
@@ -44,6 +50,9 @@ class ConvertCurrencyUseCase @Inject constructor(
                     // Luego convertimos de la moneda base a la moneda destino
                     val targetRate = exchangeRate.rates[toCurrency]
                         ?: return Result.failure(Exception("Target currency not found"))
+                    if (targetRate <= 0) {
+                        return Result.failure(Exception("Invalid exchange rate"))
+                    }
                     Result.success(amountInBaseCurrency * targetRate)
                 }
             }

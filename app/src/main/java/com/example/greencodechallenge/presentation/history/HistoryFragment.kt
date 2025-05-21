@@ -12,7 +12,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.example.greencodechallenge.R
 import com.example.greencodechallenge.data.local.entity.ConversionHistory
 import com.example.greencodechallenge.databinding.FragmentHistoryBinding
-import com.google.android.material.chip.Chip
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
@@ -91,10 +90,18 @@ class HistoryFragment : Fragment() {
         }
 
         binding.tvCountInfo.text = when {
-            count == 0 -> getString(R.string.empty_history)
+            count == 0 -> ""
             timeFilter == TimeFilter.ALL -> resources.getQuantityString(R.plurals.conversions_count_total, count, count)
             timeFilter == TimeFilter.TODAY -> resources.getQuantityString(R.plurals.conversions_count_today, count, count, filterName)
             else -> resources.getQuantityString(R.plurals.conversions_count_last_week, count, count, filterName)
+        }
+
+        if (binding.tvCountInfo.text.isEmpty()) {
+            binding.tvCountInfo.visibility = View.GONE
+            binding.btnClearHistory.visibility = View.INVISIBLE
+        } else {
+            binding.tvCountInfo.visibility = View.VISIBLE
+            binding.btnClearHistory.visibility = View.VISIBLE
         }
     }
     

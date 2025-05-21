@@ -193,6 +193,7 @@ class ConversionViewModel @Inject constructor(
     }
 
     fun updateExchangeRate(fromCurrency: String, toCurrency: String) {
+        // Update the selected currencies
         selectedFromCurrency = fromCurrency
         selectedToCurrency = toCurrency
         
@@ -209,6 +210,8 @@ class ConversionViewModel @Inject constructor(
                             _uiState.update { currentState ->
                                 if (currentState is ConversionUiState.Success) {
                                     currentState.copy(
+                                        fromCurrency = fromCurrency,
+                                        toCurrency = toCurrency,
                                         ratio = resourceProvider.getString(
                                             R.string.exchange_rate_format,
                                             fromCurrency,
@@ -234,6 +237,18 @@ class ConversionViewModel @Inject constructor(
                 _uiState.value = ConversionUiState.Error(
                     e.message ?: resourceProvider.getString(R.string.error_unknown)
                 )
+            }
+        }
+    }
+
+    fun swapCurrencies() {
+        val temp = selectedFromCurrency
+        selectedFromCurrency = selectedToCurrency
+        selectedToCurrency = temp
+        
+        selectedFromCurrency?.let { from ->
+            selectedToCurrency?.let { to ->
+                updateExchangeRate(from, to)
             }
         }
     }

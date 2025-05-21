@@ -2,8 +2,8 @@
     <string name="app_name">GreencodeChallenge</string>
 
     <!-- Fragment titles -->
-    <string name="conversion_fragment_title">Currency Converter</string>
-    <string name="history_fragment_title">Conversion History</string>
+    <string name="conversion_fragment_title">Exchange</string>
+    <string name="history_fragment_title">Record</string>
     <string name="empty_history">No conversions in history</string>
     <string name="clear_history">Clear</string>
     <string name="show_all_conversions">Show all</string>
