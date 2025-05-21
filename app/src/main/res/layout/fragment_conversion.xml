@@ -26,23 +26,13 @@
         android:id="@+id/tvFromCurrencyLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
         android:text="@string/from_currency"
         android:textStyle="bold"
-        app:layout_constraintTop_toBottomOf="@id/etAmount"
-        app:layout_constraintStart_toStartOf="parent"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"/>
-
-    <Spinner
-        android:id="@+id/spinnerFrom"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/tvFromCurrencyLabel"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="8dp"/>
+        app:layout_constraintEnd_toEndOf="@+id/spinnerFrom"
+        app:layout_constraintStart_toStartOf="@+id/spinnerFrom"
+        app:layout_constraintTop_toBottomOf="@id/etAmount" />
 
     <TextView
         android:id="@+id/tvToCurrencyLabel"
@@ -50,19 +40,43 @@
         android:layout_height="wrap_content"
         android:text="@string/to_currency"
         android:textStyle="bold"
-        app:layout_constraintTop_toBottomOf="@id/spinnerFrom"
+        app:layout_constraintTop_toTopOf="@id/tvFromCurrencyLabel"
+        app:layout_constraintStart_toStartOf="@id/spinnerTo"
+        app:layout_constraintEnd_toEndOf="@id/spinnerTo"/>
+
+    <Spinner
+        android:id="@+id/spinnerFrom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/tvFromCurrencyLabel"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btn_swap"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"/>
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="8dp"/>
+
+    <ImageButton
+        android:id="@+id/btn_swap"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ic_swap"        android:background="?attr/selectableItemBackgroundBorderless"
+        app:layout_constraintTop_toBottomOf="@id/tvFromCurrencyLabel"
+        app:layout_constraintStart_toEndOf="@id/spinnerFrom"
+        app:layout_constraintEnd_toStartOf="@id/spinnerTo"
+        app:layout_constraintBottom_toBottomOf="@id/spinnerFrom"
+        app:layout_constraintHorizontal_bias="0.5"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="8dp"/>
 
     <Spinner
         android:id="@+id/spinnerTo"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/tvToCurrencyLabel"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvFromCurrencyLabel"
+        app:layout_constraintStart_toEndOf="@id/btn_swap"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginStart="16dp"
+        android:layout_marginStart="8dp"
         android:layout_marginEnd="16dp"
         android:layout_marginTop="8dp"/>
 

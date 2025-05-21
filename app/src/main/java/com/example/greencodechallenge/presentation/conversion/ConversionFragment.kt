@@ -26,9 +26,6 @@ class ConversionFragment : Fragment() {
     private var _binding: FragmentConversionBinding? = null
     private val binding get() = _binding!!
 
-    private var fromCurrency: String = ""
-    private var toCurrency: String = ""
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -63,14 +60,7 @@ class ConversionFragment : Fragment() {
                             binding.spinnerFrom.isEnabled = true
                             binding.spinnerTo.isEnabled = true
                             
-                            if (fromCurrency.isEmpty()) {
-                                fromCurrency = state.fromCurrency
-                            }
-                            if (toCurrency.isEmpty()) {
-                                toCurrency = state.toCurrency
-                            }
-                            
-                            setupSpinners(state.currencies)
+                            setupSpinners(state.currencies, state.fromCurrency, state.toCurrency)
                             
                             if (state.ratio.isNotEmpty()) {
                                 binding.tvRatio.text = state.ratio
@@ -92,6 +82,13 @@ class ConversionFragment : Fragment() {
                             } else {
                                 binding.tvResult.text = getString(R.string.result_label)
                                 binding.tvResult.visibility = View.VISIBLE
+                            }
+
+                            val amount = binding.etAmount.text.toString()
+                            if (amount.isNotBlank() && binding.spinnerFrom.selectedItem != null && binding.spinnerTo.selectedItem != null) {
+                                val from = binding.spinnerFrom.selectedItem as String
+                                val to = binding.spinnerTo.selectedItem as String
+                                viewModel.convertCurrency(amount, from, to)
                             }
                         }
                         is ConversionUiState.Error -> {
@@ -117,11 +114,29 @@ class ConversionFragment : Fragment() {
     private fun setupListeners() {
         binding.btnConvert.setOnClickListener {
             val amount = binding.etAmount.text.toString()
-            viewModel.convertCurrency(amount, fromCurrency, toCurrency)
+            val from = binding.spinnerFrom.selectedItem as? String ?: return@setOnClickListener
+            val to = binding.spinnerTo.selectedItem as? String ?: return@setOnClickListener
+            viewModel.convertCurrency(amount, from, to)
+        }
+
+        binding.btnSwap.setOnClickListener {
+            val fromCurrency = binding.spinnerFrom.selectedItem as? String
+            val toCurrency = binding.spinnerTo.selectedItem as? String
+            
+            if (fromCurrency != null && toCurrency != null) {
+                viewModel.swapCurrencies()
+
+                val adapter = binding.spinnerFrom.adapter
+                val fromPosition = (0 until adapter.count).indexOfFirst { adapter.getItem(it) == toCurrency }
+                val toPosition = (0 until adapter.count).indexOfFirst { adapter.getItem(it) == fromCurrency }
+                
+                binding.spinnerFrom.setSelection(fromPosition)
+                binding.spinnerTo.setSelection(toPosition)
+            }
         }
     }
 
-    private fun setupSpinners(currencies: List<String>) {
+    private fun setupSpinners(currencies: List<String>, fromCurrency: String, toCurrency: String) {
         val adapter = ArrayAdapter(
             requireContext(),
             android.R.layout.simple_spinner_item,
@@ -141,11 +156,9 @@ class ConversionFragment : Fragment() {
 
         binding.spinnerFrom.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val newCurrency = currencies[position]
-                if (fromCurrency != newCurrency) {
-                    fromCurrency = newCurrency
-                    viewModel.updateExchangeRate(fromCurrency, toCurrency)
-                }
+                val from = binding.spinnerFrom.selectedItem as? String ?: return
+                val to = binding.spinnerTo.selectedItem as? String ?: return
+                viewModel.updateExchangeRate(from, to)
             }
 
             override fun onNothingSelected(parent: AdapterView<*>?) {
@@ -155,16 +168,12 @@ class ConversionFragment : Fragment() {
 
         binding.spinnerTo.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                val newCurrency = currencies[position]
-                if (toCurrency != newCurrency) {
-                    toCurrency = newCurrency
-                    viewModel.updateExchangeRate(fromCurrency, toCurrency)
-                }
+                val from = binding.spinnerFrom.selectedItem as? String ?: return
+                val to = binding.spinnerTo.selectedItem as? String ?: return
+                viewModel.updateExchangeRate(from, to)
             }
 
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-
-            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
     }
 

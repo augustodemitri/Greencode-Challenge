@@ -3,8 +3,8 @@
     <string name="app_name">GreencodeChallenge</string>
 
     <!-- Fragment títulos -->
-    <string name="conversion_fragment_title">Convertidor de monedas</string>
-    <string name="history_fragment_title">Historial de conversiones</string>
+    <string name="conversion_fragment_title">Conversor</string>
+    <string name="history_fragment_title">Historial</string>
     <string name="empty_history">No hay conversiones en el historial</string>
     <string name="clear_history">Limpiar</string>
     <string name="show_all_conversions">Mostrar todas</string>

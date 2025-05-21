@@ -24,16 +24,22 @@ class ConversionDetailViewModel @Inject constructor(
 
     fun loadConversion(id: Long) {
         viewModelScope.launch(ioDispatcher) {
-            conversionHistoryRepository.getConversionById(id)?.let { history ->
-                _conversion.value = ConversionDetailUiState(
-                    id = history.id,
-                    fromCurrency = history.fromCurrency,
-                    toCurrency = history.toCurrency,
-                    originalAmount = history.originalAmount,
-                    convertedAmount = history.convertedAmount,
-                    conversionRate = history.conversionRate,
-                    timestamp = history.timestamp
-                )
+            try {
+                conversionHistoryRepository.getConversionById(id)?.let { history ->
+                    _conversion.value = ConversionDetailUiState(
+                        id = history.id,
+                        fromCurrency = history.fromCurrency,
+                        toCurrency = history.toCurrency,
+                        originalAmount = history.originalAmount,
+                        convertedAmount = history.convertedAmount,
+                        conversionRate = history.conversionRate,
+                        timestamp = history.timestamp
+                    )
+                } ?: run {
+                    _conversion.value = null
+                }
+            } catch (e: Exception) {
+                _conversion.value = null
             }
         }
     }

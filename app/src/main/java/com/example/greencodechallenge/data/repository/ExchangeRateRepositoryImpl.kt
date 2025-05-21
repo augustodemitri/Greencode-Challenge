@@ -4,6 +4,7 @@ import com.example.greencodechallenge.data.api.ExchangeRateApi
 import com.example.greencodechallenge.domain.model.ExchangeRate
 import com.example.greencodechallenge.domain.repository.ExchangeRateRepository
 import javax.inject.Inject
+import android.util.Log
 
 class ExchangeRateRepositoryImpl @Inject constructor(
     private val api: ExchangeRateApi
@@ -17,9 +18,17 @@ class ExchangeRateRepositoryImpl @Inject constructor(
                 val body = response.body()
                 
                 if (body != null) {
+                    if (body.error != null) {
+                        val errorMessage = when (body.error.code) {
+                            106 -> "Error de autenticación: API key inválida o no configurada"
+                            else -> body.error.info
+                        }
+                        Log.e("ExchangeRateRepo", "API Error: $errorMessage")
+                        return Result.failure(Exception(errorMessage))
+                    }
+                    
                     val exchangeRate = body.toExchangeRate()
                     if (exchangeRate != null) {
-                        // Verificar si la respuesta viene del cache
                         val isFromCache = response.raw().cacheResponse != null
                         val cacheTimestamp = if (isFromCache) {
                             val cacheHeader = response.raw().header("X-Cache-Timestamp")
@@ -30,7 +39,7 @@ class ExchangeRateRepositoryImpl @Inject constructor(
                         val finalExchangeRate = exchangeRate.copy(cacheTimestamp = cacheTimestamp)
                         Result.success(finalExchangeRate)
                     } else {
-                        val errorMessage = body.error?.info ?: "Error desconocido en la respuesta de la API"
+                        val errorMessage = "Error al procesar la respuesta de la API"
                         Result.failure(Exception(errorMessage))
                     }
                 } else {
