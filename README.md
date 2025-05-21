@@ -8,7 +8,7 @@ App Android para visualiar conversiones de monedas en tiempo real. Permite selec
 2. Crea `local.properties` con:
 ```properties
 API_KEY=tu_api_key
-BASE_URL=tu_base_url
+BASE_URL=https://api.exchangerate.host/
 ```
 3. Sincroniza y ejecuta
 
