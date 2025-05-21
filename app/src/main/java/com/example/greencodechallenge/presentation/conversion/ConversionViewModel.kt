@@ -1,19 +1,23 @@
 package com.example.greencodechallenge.presentation.conversion
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.greencodechallenge.R
+import com.example.greencodechallenge.data.local.entity.ConversionHistory
 import com.example.greencodechallenge.di.IoDispatcher
 import com.example.greencodechallenge.domain.model.ExchangeRate
+import com.example.greencodechallenge.domain.repository.ConversionHistoryRepository
 import com.example.greencodechallenge.domain.usecase.ConvertCurrencyUseCase
 import com.example.greencodechallenge.domain.usecase.GetExchangeRatesUseCase
 import com.example.greencodechallenge.domain.utils.CurrencyFormatter
 import com.example.greencodechallenge.domain.utils.ResourceProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -24,355 +28,242 @@ import javax.inject.Inject
 class ConversionViewModel @Inject constructor(
     private val getExchangeRatesUseCase: GetExchangeRatesUseCase,
     private val convertCurrencyUseCase: ConvertCurrencyUseCase,
+    private val conversionHistoryRepository: ConversionHistoryRepository,
     private val resourceProvider: ResourceProvider,
     @IoDispatcher private val ioDispatcher: CoroutineDispatcher,
 ) : ViewModel() {
 
-    private val _availableCurrencies = MutableLiveData<List<String>>()
-    val availableCurrencies: LiveData<List<String>> = _availableCurrencies
+    private val _uiState = MutableStateFlow<ConversionUiState>(ConversionUiState.Loading)
+    val uiState: StateFlow<ConversionUiState> = _uiState.asStateFlow()
 
-    private val _conversionResult = MutableLiveData<String>()
-    val conversionResult: LiveData<String> = _conversionResult
-    
-    private val _conversionRatio = MutableLiveData<String>()
-    val conversionRatio: LiveData<String> = _conversionRatio
-    
-    private val _lastUpdated = MutableLiveData<String>()
-    val lastUpdated: LiveData<String> = _lastUpdated
-
-    private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: LiveData<Boolean> = _isLoading
-
-    private val _error = MutableLiveData<String>()
-    val error: LiveData<String> = _error
-
+    private var selectedFromCurrency: String? = null
+    private var selectedToCurrency: String? = null
     private var currentRates: ExchangeRate? = null
-    private var defaultFrom = ""
-    private var defaultTo = ""
-    private var lastRatesUpdateTime: Long = 0L
     private val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
 
-    init {
-        _conversionRatio.value = ""
-        _lastUpdated.value = ""
-        
-        // Cargar datos al iniciar
-        fetchExchangeRates()
-    }
-    
-    private fun shouldUpdateRates(): Boolean {
-        // Si no tenemos tasas o nunca se han actualizado (lastRatesUpdateTime = 0), debemos actualizar
-        if (currentRates == null || lastRatesUpdateTime == 0L) {
-            return true
-        }
-        
-        // Si ha pasado el intervalo de actualización, debemos actualizar
-        return System.currentTimeMillis() - lastRatesUpdateTime > RATES_UPDATE_INTERVAL
-    }
-    
-    private fun updateLastUpdatedText() {
-        if (lastRatesUpdateTime > 0) {
-            val formattedDate = dateFormat.format(Date(lastRatesUpdateTime))
-            _lastUpdated.postValue(resourceProvider.getString(R.string.last_updated_format, formattedDate))
-        }
-    }
-
     fun fetchExchangeRates(baseCurrency: String? = null) {
-        // Solo actualizar si es necesario
-        if (!shouldUpdateRates() && currentRates != null) {
-            val timeMessage = if (lastRatesUpdateTime > 0) {
-                "last updated: ${dateFormat.format(Date(lastRatesUpdateTime))}"
-            } else {
-                "(no previous update)"
-            }
-            Log.d(TAG, "Using cached rates, $timeMessage")
-            
-            currentRates?.let { rates ->
-                val currencies = mutableListOf(rates.baseCurrency)
-                currencies.addAll(rates.rates.keys)
-                
-                val distinctCurrencies = currencies.distinct().sorted()
-                _availableCurrencies.postValue(distinctCurrencies)
-            }
-            return
-        }
-        
-        Log.d(TAG, "Fetching new rates from API")
-        _isLoading.postValue(true)
-        
         viewModelScope.launch(ioDispatcher) {
             try {
+                _uiState.value = ConversionUiState.Loading
+                
                 getExchangeRatesUseCase(baseCurrency ?: "USD").fold(
                     onSuccess = { exchangeRate ->
                         if (exchangeRate.rates.isEmpty()) {
-                            Log.e(TAG, "Received empty rates from API")
-                            _error.postValue(resourceProvider.getString(R.string.error_empty_rates))
-                            _isLoading.postValue(false)
+                            _uiState.value = ConversionUiState.Error(
+                                resourceProvider.getString(R.string.error_empty_rates)
+                            )
                             return@fold
                         }
                         
                         currentRates = exchangeRate
-                        lastRatesUpdateTime = System.currentTimeMillis()
-                        updateLastUpdatedText()
-                        
-                        val currencies = mutableListOf(exchangeRate.baseCurrency)
-                        currencies.addAll(exchangeRate.rates.keys)
-                        
-                        val distinctCurrencies = currencies.distinct().sorted()
-                        
-                        // Guardar las monedas por defecto para inicialización
-                        if (distinctCurrencies.isNotEmpty()) {
-                            defaultFrom = distinctCurrencies.first()
-                            defaultTo = if (distinctCurrencies.size > 1) distinctCurrencies[1] else distinctCurrencies.first()
-                            
-                            // Pre-calcular el ratio inicial con las tasas disponibles
-                            val initialRatio = calculateRatio(defaultFrom, defaultTo, exchangeRate)
-                            if (initialRatio > 0) {
-                                val ratioText = resourceProvider.getString(
-                                    R.string.exchange_rate_format,
-                                    defaultFrom,
-                                    CurrencyFormatter.formatNumber(initialRatio),
-                                    defaultTo
-                                )
-                                _conversionRatio.postValue(ratioText)
-                            }
-                        }
-                        
-                        _availableCurrencies.postValue(distinctCurrencies)
-                        _isLoading.postValue(false)
-                        
-                        Log.d(TAG, "Rates updated at: ${dateFormat.format(Date(lastRatesUpdateTime))}")
+                        updateSuccessState()
                     },
                     onFailure = { throwable ->
-                        Log.e(TAG, "Error fetching rates: ${throwable.message}")
-                        _error.postValue(throwable.message ?: resourceProvider.getString(R.string.error_unknown))
-                        _isLoading.postValue(false)
+                        _uiState.value = ConversionUiState.Error(
+                            throwable.message ?: resourceProvider.getString(R.string.error_unknown)
+                        )
                     }
                 )
             } catch (e: Exception) {
-                Log.e(TAG, "Exception fetching rates: ${e.message}")
-                _error.postValue(e.message ?: resourceProvider.getString(R.string.error_unknown))
-                _isLoading.postValue(false)
-            }
-        }
-    }
-    
-    /**
-     * Obtiene y muestra solo el ratio de conversión cuando cambian las monedas seleccionadas
-     */
-    fun updateExchangeRate(fromCurrency: String, toCurrency: String) {
-        if (fromCurrency.isEmpty() || toCurrency.isEmpty()) {
-            return
-        }
-        
-        // Intentar calcular el ratio con los datos actuales primero
-        currentRates?.let { rates ->
-            val ratio = calculateRatio(fromCurrency, toCurrency, rates)
-            if (ratio > 0) {
-                _conversionRatio.value = resourceProvider.getString(
-                    R.string.exchange_rate_format,
-                    fromCurrency,
-                    CurrencyFormatter.formatNumber(ratio),
-                    toCurrency
+                _uiState.value = ConversionUiState.Error(
+                    e.message ?: resourceProvider.getString(R.string.error_unknown)
                 )
-                return
             }
-        }
-        
-        // Si no tenemos datos, los obtenemos, pero respetando el intervalo de actualización
-        if (shouldUpdateRates()) {
-            Log.d(TAG, "Need to update rates, fetching from API")
-            _conversionRatio.value = resourceProvider.getString(R.string.loading_exchange_rate)
-            
-            viewModelScope.launch(ioDispatcher) {
-                try {
-                    getExchangeRatesUseCase("USD").fold(
-                        onSuccess = { exchangeRate ->
-                            currentRates = exchangeRate
-                            lastRatesUpdateTime = System.currentTimeMillis()
-                            updateLastUpdatedText()
-                            
-                            val ratio = calculateRatio(fromCurrency, toCurrency, exchangeRate)
-                            
-                            if (ratio > 0) {
-                                val ratioText = resourceProvider.getString(
-                                    R.string.exchange_rate_format,
-                                    fromCurrency,
-                                    CurrencyFormatter.formatNumber(ratio),
-                                    toCurrency
-                                )
-                                _conversionRatio.postValue(ratioText)
-                            } else {
-                                _conversionRatio.postValue(resourceProvider.getString(R.string.exchange_rate_not_available))
-                            }
-                            
-                            Log.d(TAG, "Rates updated at: ${dateFormat.format(Date(lastRatesUpdateTime))}")
-                        },
-                        onFailure = { throwable ->
-                            Log.e(TAG, "Error updating rates: ${throwable.message}")
-                            _conversionRatio.postValue(resourceProvider.getString(R.string.error_fetching_rates))
-                            _error.postValue(throwable.message ?: resourceProvider.getString(R.string.error_fetching_rates))
-                        }
-                    )
-                } catch (e: Exception) {
-                    Log.e(TAG, "Exception updating rates: ${e.message}")
-                    _conversionRatio.postValue(resourceProvider.getString(R.string.error_fetching_rates))
-                    _error.postValue(e.message ?: resourceProvider.getString(R.string.error_unknown))
-                }
-            }
-        } else {
-            // Si ya intentamos calcular con los datos en caché y falló, y no es momento de actualizar,
-            // simplemente mostramos el mensaje de error
-            val timeMessage = if (lastRatesUpdateTime > 0) {
-                "from: ${dateFormat.format(Date(lastRatesUpdateTime))}"
-            } else {
-                "(no previous update)"
-            }
-            Log.d(TAG, "Using cached rates $timeMessage, but calculation failed")
-            _conversionRatio.value = resourceProvider.getString(R.string.exchange_rate_not_available)
         }
     }
 
-    /**
-     * Calcula el ratio de una moneda a otra usando las tasas recibidas
-     */
-    private fun calculateRatio(fromCurrency: String, toCurrency: String, exchangeRate: ExchangeRate): Double {
-        return if (fromCurrency == toCurrency) {
-            1.0
-        } else if (fromCurrency == exchangeRate.baseCurrency) {
-            // Si la moneda base es la moneda origen, usamos directamente la tasa
-            exchangeRate.rates[toCurrency] ?: 0.0
-        } else if (toCurrency == exchangeRate.baseCurrency) {
-            // Convertir a la moneda base (relación inversa)
-            val fromRate = exchangeRate.rates[fromCurrency] ?: 0.0
-            if (fromRate > 0) 1.0 / fromRate else 0.0
-        } else {
-            // Conversión entre dos monedas que no son la base
-            val fromRate = exchangeRate.rates[fromCurrency] ?: 0.0
-            val toRate = exchangeRate.rates[toCurrency] ?: 0.0
-            if (fromRate > 0) toRate / fromRate else 0.0
+    private fun updateSuccessState() {
+        currentRates?.let { rates ->
+            val currencies = mutableListOf(rates.baseCurrency)
+            currencies.addAll(rates.rates.keys)
+            val distinctCurrencies = currencies.distinct().sorted()
+            
+            val fromCurrency = selectedFromCurrency?.takeIf { it in distinctCurrencies } 
+                ?: distinctCurrencies.first()
+            val toCurrency = selectedToCurrency?.takeIf { it in distinctCurrencies }
+                ?: if (distinctCurrencies.size > 1) distinctCurrencies[1] else distinctCurrencies.first()
+            
+            selectedFromCurrency = fromCurrency
+            selectedToCurrency = toCurrency
+            
+            viewModelScope.launch(ioDispatcher) {
+                convertCurrencyUseCase.execute(
+                    amount = 1.0,
+                    fromCurrency = fromCurrency,
+                    toCurrency = toCurrency,
+                    exchangeRate = rates
+                ).fold(
+                    onSuccess = { convertedAmount ->
+                        val ratio = resourceProvider.getString(
+                            R.string.exchange_rate_format,
+                            fromCurrency,
+                            CurrencyFormatter.formatNumber(convertedAmount),
+                            toCurrency
+                        )
+                        
+                        // Try to get the cache timestamp from the ExchangeRate model (set in repository)
+                        val timestampToShow = rates.cacheTimestamp ?: rates.timestamp
+                        val lastUpdated = resourceProvider.getString(
+                            R.string.last_updated_format,
+                            dateFormat.format(Date(timestampToShow * 1000))
+                        )
+
+                        _uiState.value = ConversionUiState.Success(
+                            currencies = distinctCurrencies,
+                            fromCurrency = fromCurrency,
+                            toCurrency = toCurrency,
+                            ratio = ratio,
+                            result = "",
+                            lastUpdated = lastUpdated
+                        )
+                    },
+                    onFailure = { throwable ->
+                        _uiState.value = ConversionUiState.Error(
+                            throwable.message ?: resourceProvider.getString(R.string.error_conversion)
+                        )
+                    }
+                )
+            }
         }
     }
 
     fun convertCurrency(amount: String, fromCurrency: String, toCurrency: String) {
         if (amount.isBlank()) {
-            _error.value = resourceProvider.getString(R.string.error_empty_amount)
+            _uiState.value = ConversionUiState.Error(resourceProvider.getString(R.string.error_empty_amount))
             return
         }
 
         val amountDouble = amount.toDoubleOrNull()
         if (amountDouble == null) {
-            _error.value = resourceProvider.getString(R.string.error_invalid_amount)
+            _uiState.value = ConversionUiState.Error(resourceProvider.getString(R.string.error_invalid_amount))
             return
         }
 
-        _isLoading.value = true
-        
-        Log.d(TAG, "Converting $amount from $fromCurrency to $toCurrency")
-        
-        // Intentar hacer la conversión con los datos actuales primero
-        currentRates?.let { rates ->
+        viewModelScope.launch(ioDispatcher) {
             try {
-                val ratio = calculateRatio(fromCurrency, toCurrency, rates)
-                if (ratio > 0) {
-                    // Actualizar la visualización del ratio
-                    _conversionRatio.value = resourceProvider.getString(
-                        R.string.exchange_rate_format,
-                        fromCurrency,
-                        CurrencyFormatter.formatNumber(ratio),
-                        toCurrency
-                    )
-                    
-                    val convertedAmount = amountDouble * ratio
-                    _conversionResult.value = CurrencyFormatter.formatConversionResult(
+                currentRates?.let { rates ->
+                    convertCurrencyUseCase.execute(
                         amount = amountDouble,
                         fromCurrency = fromCurrency,
-                        convertedAmount = convertedAmount,
                         toCurrency = toCurrency,
-                        locale = Locale.getDefault()
-                    )
-                    _isLoading.value = false
-                    Log.d(TAG, "Conversion successful using cached rates")
-                    return@let
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, e.message.toString())
-            }
-        }
-
-        if (shouldUpdateRates()) {
-            Log.d(TAG, "Need to update rates for conversion, fetching from API")
-            
-            viewModelScope.launch(ioDispatcher) {
-                try {
-                    getExchangeRatesUseCase("USD").fold(
-                        onSuccess = { exchangeRate ->
-                            currentRates = exchangeRate
-                            lastRatesUpdateTime = System.currentTimeMillis()
-                            updateLastUpdatedText()
-                            
-                            // Calcular y actualizar el ratio
-                            val ratio = calculateRatio(fromCurrency, toCurrency, exchangeRate)
-                            if (ratio > 0) {
-                                val ratioText = resourceProvider.getString(
-                                    R.string.exchange_rate_format,
-                                    fromCurrency,
-                                    CurrencyFormatter.formatNumber(ratio),
-                                    toCurrency
-                                )
-                                _conversionRatio.postValue(ratioText)
-                            }
-                            
-                            // Ahora hacemos la conversión con las tasas actualizadas
-                            val result = convertCurrencyUseCase.execute(
+                        exchangeRate = rates
+                    ).fold(
+                        onSuccess = { convertedAmount ->
+                            val result = CurrencyFormatter.formatConversionResult(
                                 amount = amountDouble,
                                 fromCurrency = fromCurrency,
+                                convertedAmount = convertedAmount,
                                 toCurrency = toCurrency,
-                                exchangeRate = exchangeRate
+                                locale = Locale.getDefault()
                             )
-
-                            result.fold(
-                                onSuccess = { convertedAmount ->
-                                    val resultText = CurrencyFormatter.formatConversionResult(
-                                        amount = amountDouble,
-                                        fromCurrency = fromCurrency,
-                                        convertedAmount = convertedAmount,
-                                        toCurrency = toCurrency,
-                                        locale = Locale.getDefault()
+                            
+                            _uiState.update { currentState ->
+                                if (currentState is ConversionUiState.Success) {
+                                    currentState.copy(
+                                        result = result,
+                                        ratio = resourceProvider.getString(
+                                            R.string.exchange_rate_format,
+                                            fromCurrency,
+                                            CurrencyFormatter.formatNumber(convertedAmount / amountDouble),
+                                            toCurrency
+                                        )
                                     )
-                                    _conversionResult.postValue(resultText)
-                                    _isLoading.postValue(false)
-                                    Log.d(TAG, "Conversion successful with updated rates")
-                                },
-                                onFailure = { throwable ->
-                                    Log.e(TAG, "Conversion error: ${throwable.message}")
-                                    _error.postValue(throwable.message ?: resourceProvider.getString(R.string.error_conversion))
-                                    _isLoading.postValue(false)
+                                } else {
+                                    currentState
                                 }
-                            )
+                            }
+                            
+                            saveConversionToHistory(amountDouble, convertedAmount, fromCurrency, toCurrency, convertedAmount / amountDouble)
                         },
                         onFailure = { throwable ->
-                            Log.e(TAG, "Error fetching rates for conversion: ${throwable.message}")
-                            _error.postValue(throwable.message ?: resourceProvider.getString(R.string.error_fetching_rates))
-                            _isLoading.postValue(false)
+                            _uiState.value = ConversionUiState.Error(
+                                throwable.message ?: resourceProvider.getString(R.string.error_conversion)
+                            )
                         }
                     )
-                } catch (e: Exception) {
-                    Log.e(TAG, "Exception during conversion: ${e.message}")
-                    _error.postValue(e.message ?: resourceProvider.getString(R.string.error_unknown))
-                    _isLoading.postValue(false)
+                } ?: run {
+                    _uiState.value = ConversionUiState.Error(resourceProvider.getString(R.string.error_no_rates))
                 }
+            } catch (e: Exception) {
+                _uiState.value = ConversionUiState.Error(
+                    e.message ?: resourceProvider.getString(R.string.error_unknown)
+                )
             }
-        } else {
-            // Si no necesitamos actualizar pero aún así no pudimos calcular, mostrar error
-            Log.e(TAG, "Conversion failed with cached rates, but not updating from API")
-            _error.postValue(resourceProvider.getString(R.string.error_conversion))
-            _isLoading.postValue(false)
         }
     }
-    
+
+    fun updateExchangeRate(fromCurrency: String, toCurrency: String) {
+        selectedFromCurrency = fromCurrency
+        selectedToCurrency = toCurrency
+        
+        viewModelScope.launch(ioDispatcher) {
+            try {
+                currentRates?.let { rates ->
+                    convertCurrencyUseCase.execute(
+                        amount = 1.0,
+                        fromCurrency = fromCurrency,
+                        toCurrency = toCurrency,
+                        exchangeRate = rates
+                    ).fold(
+                        onSuccess = { convertedAmount ->
+                            _uiState.update { currentState ->
+                                if (currentState is ConversionUiState.Success) {
+                                    currentState.copy(
+                                        ratio = resourceProvider.getString(
+                                            R.string.exchange_rate_format,
+                                            fromCurrency,
+                                            CurrencyFormatter.formatNumber(convertedAmount),
+                                            toCurrency
+                                        )
+                                    )
+                                } else {
+                                    currentState
+                                }
+                            }
+                        },
+                        onFailure = { throwable ->
+                            _uiState.value = ConversionUiState.Error(
+                                throwable.message ?: resourceProvider.getString(R.string.error_conversion)
+                            )
+                        }
+                    )
+                } ?: run {
+                    _uiState.value = ConversionUiState.Error(resourceProvider.getString(R.string.error_no_rates))
+                }
+            } catch (e: Exception) {
+                _uiState.value = ConversionUiState.Error(
+                    e.message ?: resourceProvider.getString(R.string.error_unknown)
+                )
+            }
+        }
+    }
+
+    private fun saveConversionToHistory(
+        originalAmount: Double,
+        convertedAmount: Double,
+        fromCurrency: String,
+        toCurrency: String,
+        conversionRate: Double
+    ) {
+        viewModelScope.launch(ioDispatcher) {
+            val conversionHistory = ConversionHistory(
+                fromCurrency = fromCurrency,
+                toCurrency = toCurrency,
+                originalAmount = originalAmount,
+                convertedAmount = convertedAmount,
+                conversionRate = conversionRate
+            )
+            
+            try {
+                conversionHistoryRepository.saveConversion(conversionHistory)
+                Log.d(TAG, "Conversion saved to history")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error saving conversion to history: ${e.message}")
+            }
+        }
+    }
+
     companion object {
-        const val RATES_UPDATE_INTERVAL = 60 * 60 * 1000 // 1 hora en milisegundos
         const val TAG = "ConversionViewModel"
     }
 } 
